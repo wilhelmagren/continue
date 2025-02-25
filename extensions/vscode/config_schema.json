@@ -178,6 +178,7 @@
             "cohere",
             "bedrock",
             "bedrockimport",
+            "bedrockprivate",
             "sagemaker",
             "together",
             "novita",
