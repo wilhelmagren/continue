@@ -166,6 +166,4 @@ extensions/intellij/.idea/**
 extensions/intellij/bin
 extensions/.continue-debug/
 
-*.vsix
-
 .continuerules
