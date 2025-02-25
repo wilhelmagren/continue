@@ -470,6 +470,7 @@ export interface LLMOptions {
   systemMessage?: string;
   contextLength?: number;
   maxStopWords?: number;
+  gatewayId?: string;
   completionOptions?: CompletionOptions;
   requestOptions?: RequestOptions;
   template?: TemplateType;
