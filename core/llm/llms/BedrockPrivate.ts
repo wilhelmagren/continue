@@ -21,11 +21,13 @@ class BedrockPrivate extends BaseLLM {
     ): AsyncGenerator<string> {
         const originalHttpProxy = process.env.HTTP_PROXY;
         const originalHttpsProxy = process.env.HTTPS_PROXY;
+        const originalTlsRejectUnauthorized = process.env.NODE_TLS_REJECT_UNAUTHORIZED;
 
         try {
             // Unset the environment variables if process is defined
             delete process.env.HTTP_PROXY;
             delete process.env.HTTPS_PROXY;
+            process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
             const response = await fetch(this.getEndpoint("llm/generate"), {
                 method: "POST",
@@ -33,10 +35,12 @@ class BedrockPrivate extends BaseLLM {
                 body: JSON.stringify(this._getGenerateOptions(prompt, options))
             });
 
-            // Process the response (assuming JSON response)
-            const data = await response.json();
-            for (const chunk of data.chunks) {
-                yield chunk;
+            console.log(response);
+
+            if (!response.ok) {
+                yield "Bad response: " + await response.json();
+            } else {
+                yield await response.text();
             }
         } finally {
             // Reset the environment variables if process is defined
@@ -45,6 +49,11 @@ class BedrockPrivate extends BaseLLM {
             }
             if (originalHttpsProxy) {
                 process.env.HTTPS_PROXY = originalHttpsProxy;
+            }
+            if (originalTlsRejectUnauthorized) {
+                process.env.NODE_TLS_REJECT_UNAUTHORIZED = originalTlsRejectUnauthorized;
+            } else {
+                delete process.env.NODE_TLS_REJECT_UNAUTHORIZED;
             }
         }
     }
@@ -56,11 +65,13 @@ class BedrockPrivate extends BaseLLM {
     ): AsyncGenerator<ChatMessage> {
         const originalHttpProxy = process.env.HTTP_PROXY;
         const originalHttpsProxy = process.env.HTTPS_PROXY;
+        const originalTlsRejectUnauthorized = process.env.NODE_TLS_REJECT_UNAUTHORIZED;
 
         try {
             // Unset the environment variables if process is defined
             delete process.env.HTTP_PROXY;
             delete process.env.HTTPS_PROXY;
+            process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
             const response = await fetch(this.getEndpoint("llm/chat"), {
                 method: "POST",
@@ -80,6 +91,11 @@ class BedrockPrivate extends BaseLLM {
             }
             if (originalHttpsProxy) {
                 process.env.HTTPS_PROXY = originalHttpsProxy;
+            }
+            if (originalTlsRejectUnauthorized) {
+                process.env.NODE_TLS_REJECT_UNAUTHORIZED = originalTlsRejectUnauthorized;
+            } else {
+                delete process.env.NODE_TLS_REJECT_UNAUTHORIZED;
             }
         }
     }
