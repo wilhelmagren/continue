@@ -9,15 +9,9 @@ class BedrockPrivate extends BaseLLM {
         contextLength: 100_000
     };
 
-    apiBase: string | undefined;
-    gatewayId: string | undefined;
-    apiKey: string  | undefined;
-
     constructor(options: LLMOptions) {
         super(options);
         this.apiBase = options.apiBase;
-        this.gatewayId = options.gatewayId;
-        this.apiKey = options.apiKey;
     }
 
     protected async *_streamComplete(
@@ -35,12 +29,7 @@ class BedrockPrivate extends BaseLLM {
 
             const response = await fetch(this.getEndpoint("llm/generate"), {
                 method: "POST",
-                headers: {
-                    ...(this.apiBase && { "Host": this.apiBase }),
-                    ...(this.gatewayId && { "x-apigw-api-id": this.gatewayId }),
-                    "Content-Type": "application/json",
-                    ...(this.apiKey && { "x-api-key": this.apiKey })
-                },
+                headers: this.requestOptions?.headers,
                 body: JSON.stringify(this._getGenerateOptions(prompt, options))
             });
 
@@ -75,12 +64,7 @@ class BedrockPrivate extends BaseLLM {
 
             const response = await fetch(this.getEndpoint("llm/chat"), {
                 method: "POST",
-                headers: {
-                    ...(this.apiBase && { "Host": this.apiBase }),
-                    ...(this.gatewayId && { "x-apigw-api-id": this.gatewayId }),
-                    "Content-Type": "application/json",
-                    ...(this.apiKey && { "x-api-key": this.apiKey })
-                },
+                headers: this.requestOptions?.headers,
                 body: JSON.stringify({ messages, options })
             });
 
