@@ -1,11 +1,11 @@
 import { BaseLLM } from "..";
 import { CompletionOptions, LLMOptions, ChatMessage } from "../..";
+import { streamResponse } from "../stream.js";
 
 class BedrockPrivate extends BaseLLM {
     static providerName = "bedrockprivate";
     static defaultOptions: Partial<LLMOptions> = {
-        region: "us-east-1",
-        model: "custom.model",
+        region: "us-north-1",
         contextLength: 100_000
     };
 
@@ -32,15 +32,26 @@ class BedrockPrivate extends BaseLLM {
             const response = await fetch(this.getEndpoint("llm/generate"), {
                 method: "POST",
                 headers: this.requestOptions?.headers,
-                body: JSON.stringify(this._getGenerateOptions(prompt, options))
+                body: JSON.stringify(this._getGenerateOptions(prompt, options)),
+                signal,
             });
 
-            console.log(response);
-
             if (!response.ok) {
-                yield "Bad response: " + await response.json();
-            } else {
-                yield await response.text();
+                yield `Bad response: ${await response.json()}`;
+            }
+            
+            let buffer = "";
+            for await (const value of streamResponse(response)) {
+                buffer += value;
+                const chunks = buffer.split("\n");
+                buffer = chunks.pop() ?? "";
+
+                for (let i = 0; i < chunks.length; i++) {
+                    const chunk = chunks[i];
+                    if (chunk.trim() !== "") {
+                        yield chunk;
+                    }
+                }
             }
         } finally {
             // Reset the environment variables if process is defined
@@ -76,13 +87,28 @@ class BedrockPrivate extends BaseLLM {
             const response = await fetch(this.getEndpoint("llm/chat"), {
                 method: "POST",
                 headers: this.requestOptions?.headers,
-                body: JSON.stringify({ messages, options })
+                body: JSON.stringify({ messages, options }),
+                signal,
             });
 
-            // Process the response (assuming JSON response)
-            const data = await response.json();
-            for (const chunk of data.chunks) {
-                yield chunk;
+            if (!response.ok) {
+                yield { role: "system", content: `Bad response: ${await response.json()}` };
+            } else {
+                const reader = response.body?.getReader();
+                const decoder = new TextDecoder();
+                let buffer = "";
+                while (true) {
+                    const { done, value } = await reader?.read()!;
+                    if (done) break;
+                    buffer += decoder.decode(value, { stream: true });
+                    const chunks = buffer.split("\n");
+                    buffer = chunks.pop() ?? "";
+                    for (const chunk of chunks) {
+                        if (chunk.trim() !== "") {
+                            yield { role: "assistant", content: chunk };
+                        }
+                    }
+                }
             }
         } finally {
             // Reset the environment variables if process is defined
