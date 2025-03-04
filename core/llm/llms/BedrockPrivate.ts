@@ -1,6 +1,7 @@
 import { BaseLLM } from "..";
 import { CompletionOptions, LLMOptions, ChatMessage } from "../..";
 import { streamResponse } from "../stream.js";
+import { renderChatMessage } from "../../util/messageContent";
 
 class BedrockPrivate extends BaseLLM {
     static providerName = "bedrockprivate";
@@ -91,9 +92,11 @@ class BedrockPrivate extends BaseLLM {
                 yield { role: "system", content: `Bad response: ${await response.text()}` };
             } else {
                 const body = await response.json();
+                console.log(body);
                 const chunks = body.split("\n");
+                console.log(chunks);
                 for (const chunk of chunks) {
-                    yield { role: "assistant", content: chunk };
+                    yield { role: "assistant", content: chunk.trim().replace(/["]+/g, '') };
                 }
             }
             
