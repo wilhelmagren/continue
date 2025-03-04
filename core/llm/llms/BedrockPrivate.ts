@@ -40,7 +40,7 @@ class BedrockPrivate extends BaseLLM {
                 yield `Bad response: ${await response.json()}`;
             }
 
-            const body = (await response.json()).body;
+            const body = (await response.text());
             const chunks = body.split("\n");
             for (let i = 0; i < chunks.length - 1; i++) {
                 yield chunks[i];
@@ -87,7 +87,7 @@ class BedrockPrivate extends BaseLLM {
                 yield { role: "system", content: `Bad response: ${await response.json()}` };
             }
 
-            const body = (await response.json()).body;
+            const body = (await response.text());
             const chunks = body.split("\n");
             for (let i = 0; i < chunks.length - 1; i++) {
                 yield { role: "assistant", content: chunks[i] };
