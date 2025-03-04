@@ -36,10 +36,13 @@ class BedrockPrivate extends BaseLLM {
                 signal,
             });
 
+            console.log(response);
+
             if (!response.ok) {
-                yield `Bad response: ${await response.json()}`;
+                yield `Bad response: ${await response.text()}`;
+            } else {
+                yield await response.text();
             }
-            yield "HELLO???";
         } finally {
             // Reset the environment variables if process is defined
             if (originalHttpProxy) {
@@ -78,11 +81,14 @@ class BedrockPrivate extends BaseLLM {
                 signal,
             });
 
-            if (!response.ok) {
-                yield { role: "system", content: `Bad response: ${await response.json()}` };
-            }
+            console.log(response);
 
-            yield { role: "assistant", content: "HeLLO???" };
+            if (!response.ok) {
+                yield { role: "system", content: `Bad response: ${await response.text()}` };
+            } else {
+                yield { role: "assistant", content: await response.text() };
+            }
+            
         } finally {
             // Reset the environment variables if process is defined
             if (originalHttpProxy) {
