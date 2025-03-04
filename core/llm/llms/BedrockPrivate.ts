@@ -39,19 +39,11 @@ class BedrockPrivate extends BaseLLM {
             if (!response.ok) {
                 yield `Bad response: ${await response.json()}`;
             }
-            
-            let buffer = "";
-            for await (const value of streamResponse(response)) {
-                buffer += value;
-                const chunks = buffer.split("\n");
-                buffer = chunks.pop() ?? "";
 
-                for (let i = 0; i < chunks.length; i++) {
-                    const chunk = chunks[i];
-                    if (chunk.trim() !== "") {
-                        yield chunk;
-                    }
-                }
+            const body = (await response.json()).body;
+            const chunks = body.split("\n");
+            for (let i = 0; i < chunks.length - 1; i++) {
+                yield chunks[i];
             }
         } finally {
             // Reset the environment variables if process is defined
@@ -93,22 +85,12 @@ class BedrockPrivate extends BaseLLM {
 
             if (!response.ok) {
                 yield { role: "system", content: `Bad response: ${await response.json()}` };
-            } else {
-                const reader = response.body?.getReader();
-                const decoder = new TextDecoder();
-                let buffer = "";
-                while (true) {
-                    const { done, value } = await reader?.read()!;
-                    if (done) break;
-                    buffer += decoder.decode(value, { stream: true });
-                    const chunks = buffer.split("\n");
-                    buffer = chunks.pop() ?? "";
-                    for (const chunk of chunks) {
-                        if (chunk.trim() !== "") {
-                            yield { role: "assistant", content: chunk };
-                        }
-                    }
-                }
+            }
+
+            const body = (await response.json()).body;
+            const chunks = body.split("\n");
+            for (let i = 0; i < chunks.length - 1; i++) {
+                yield { role: "assistant", content: chunks[i] };
             }
         } finally {
             // Reset the environment variables if process is defined
